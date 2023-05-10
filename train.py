@@ -20,23 +20,24 @@ import os
 import numpy as np
 
 hyperparameter_defaults = dict(
-    dropout = 0.5,
-    channels_one = 16,
-    channels_two = 32,
-    batch_size = 100,
+    first_omega_0 = 30,
+    hidden_omega_0 = 30,
+    hidden_layers = 2,
+    hidden_features = 256,
     learning_rate = 0.001,
     epochs = 100,
     )
 
-wandb.init(config=hyperparameter_defaults, project="algelin_1rst_attempt")
+wandb.init(config=hyperparameter_defaults, project="algelin_1rst_attempt",entity='alglin')
 config = wandb.config
 
 
 
 def main():
     
-    model = network.Siren(in_features=1, out_features=1, first_omega_0=30, 
-                            hidden_omega_0= 30, hidden_features=256, hidden_layers=3, outermost_linear=True)
+    model = network.Siren(in_features=1, out_features=1, first_omega_0=config.first_omega_0, 
+                            hidden_omega_0= config.hidden_omega_0, hidden_features=config.hidden_features,
+                             hidden_layers=config.hidden_layers, outermost_linear=True)
 
     fn = dataset.sines1
     train_signal_dataset = dataset.Func1DWrapper(range=(-0.5, 0.5),
@@ -86,7 +87,7 @@ def main():
             metrics = {'loss': loss}
             wandb.log(metrics)
             # Print Loss
-            print('Iteration: {0} Loss: {1:.2f} '.format(iter, loss))
+            print(f'Iteration: Loss: {loss} ')
     torch.save(model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
 
 if __name__ == '__main__':
