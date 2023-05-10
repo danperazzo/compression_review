@@ -17,6 +17,7 @@ import network
 import dataset
 import wandb
 import os
+import numpy as np
 
 hyperparameter_defaults = dict(
     dropout = 0.5,
@@ -34,9 +35,10 @@ config = wandb.config
 
 def main():
     
-    model = network.Siren(in_features=2, out_features=1, first_omega_0=30, 
+    model = network.Siren(in_features=1, out_features=1, first_omega_0=30, 
                             hidden_omega_0= 30, hidden_features=256, hidden_layers=3, outermost_linear=True)
 
+    fn = dataset.sines1
     train_signal_dataset = dataset.Func1DWrapper(range=(-0.5, 0.5),
                                          fn=fn,
                                          sampling_density=1000,
@@ -61,7 +63,7 @@ def main():
             optimizer.zero_grad()
 
             # Forward pass to get output/logits
-            outputs = model(coords)
+            outputs, _ = model(coords)
 
             # Calculate Loss: softmax --> cross entropy loss
             loss = criterion(outputs, values)
@@ -76,7 +78,7 @@ def main():
         if epoch % 10 == 0:
             with torch.no_grad():
                 # Forward pass to get output/logits
-                outputs = model(coords)
+                outputs, _ = model(coords)
 
                 # Calculate Loss: softmax --> cross entropy loss
                 loss = criterion(outputs, values)
