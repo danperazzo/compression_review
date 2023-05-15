@@ -31,12 +31,16 @@ hyperparameter_defaults = dict(
 wandb.init(config=hyperparameter_defaults, project="algelin_1rst_attempt",entity='alglin')
 config = wandb.config
 
-def log_fft(src:torch.Tensor, label:str):
-        fourier_tensor = torch.fft.fftshift(
-                        torch.fft.fft(pixels.squeeze(-1)))
-        magnitude = 20 * np.log(abs(fourier_tensor.numpy()) + 1e-10)
-        magnitude = magnitude / np.max(magnitude)
-        wandb.log({label: wandb.Image(img)})
+def perform_fft( src:torch.Tensor):
+    fourier_tensor = torch.fft.fftshift(
+                    torch.fft.fft2(src.squeeze(-1)))
+    magnitude = 20 * np.log(abs(fourier_tensor.numpy()) + 1e-10)
+    magnitude = magnitude / np.max(magnitude)
+        
+    return magnitude.squeeze()
+    
+
+
 
 def return_list(tensor):
     return tensor.squeeze().detach().numpy().tolist()
@@ -110,6 +114,9 @@ def main():
 
             log_plot(return_list(coords), return_list(outputs),"Outputs_Plot" )
             log_plot(return_list(coords), return_list(values),"Values_Plot" )
+
+            log_plot(return_list(coords), perform_fft(outputs).tolist(), "Outputs_FFT")
+            log_plot(return_list(coords), perform_fft(values).tolist(), "Values_FFT")
 
 
     torch.save(model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
