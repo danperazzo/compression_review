@@ -31,6 +31,25 @@ hyperparameter_defaults = dict(
 wandb.init(config=hyperparameter_defaults, project="algelin_1rst_attempt",entity='alglin')
 config = wandb.config
 
+def log_fft(src:torch.Tensor, label:str):
+        fourier_tensor = torch.fft.fftshift(
+                        torch.fft.fft(pixels.squeeze(-1)))
+        magnitude = 20 * np.log(abs(fourier_tensor.numpy()) + 1e-10)
+        magnitude = magnitude / np.max(magnitude)
+        wandb.log({label: wandb.Image(img)})
+
+def return_list(tensor):
+    return tensor.squeeze().detach().numpy().tolist()
+
+
+def log_plot(x_values, y_values, name):
+
+    data = [[x, y] for (x, y) in zip(x_values, y_values)]
+    table = wandb.Table(data=data, columns = ["x", "y"])
+
+    wandb.log(
+        {name : wandb.plot.line(table, "x", "y",
+            title=name)})
 
 
 def main():
@@ -88,6 +107,11 @@ def main():
             wandb.log(metrics)
             # Print Loss
             print(f'Iteration: Loss: {loss} ')
+
+            log_plot(return_list(coords), return_list(outputs),"Outputs_Plot" )
+            log_plot(return_list(coords), return_list(values),"Values_Plot" )
+
+
     torch.save(model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
 
 if __name__ == '__main__':
