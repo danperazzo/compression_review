@@ -18,6 +18,7 @@ import dataset
 import wandb
 import os
 import numpy as np
+from scipy.fft import fft, fftfreq
 
 hyperparameter_defaults = dict(
     first_omega_0 = 30,
@@ -31,14 +32,13 @@ hyperparameter_defaults = dict(
 wandb.init(config=hyperparameter_defaults, project="algelin_1rst_attempt",entity='alglin')
 config = wandb.config
 
-def perform_fft( src:torch.Tensor):
-    fourier_tensor = torch.fft.fftshift(
-                    torch.fft.fft2(src.squeeze(-1)))
-    magnitude = 20 * np.log(abs(fourier_tensor.numpy()) + 1e-10)
-    magnitude = magnitude / np.max(magnitude)
-        
-    return magnitude.squeeze()
-    
+
+def get_fft(data):
+    W = data.view(-1).cpu().detach().numpy()
+    N = len(W)
+    yf = fft(W)
+    xf = fftfreq(N, 2/N)[:N//2]
+    return [[x,y] for (x,y) in zip(xf, 2.0/N * np.abs(yf[0:N//2]) )]
 
 
 
@@ -46,9 +46,13 @@ def return_list(tensor):
     return tensor.squeeze().detach().numpy().tolist()
 
 
-def log_plot(x_values, y_values, name):
+def log_plot(x_values, y_values, name, do_FFT = False):
 
-    data = [[x, y] for (x, y) in zip(x_values, y_values)]
+    if do_FFT:
+        data = get_fft(y_values)
+    else:
+        data = [[x, y] for (x, y) in zip(x_values, y_values)]
+
     table = wandb.Table(data=data, columns = ["x", "y"])
 
     wandb.log(
@@ -115,8 +119,8 @@ def main():
             log_plot(return_list(coords), return_list(outputs),"Outputs_Plot" )
             log_plot(return_list(coords), return_list(values),"Values_Plot" )
 
-            log_plot(return_list(coords), perform_fft(outputs).tolist(), "Outputs_FFT")
-            log_plot(return_list(coords), perform_fft(values).tolist(), "Values_FFT")
+            log_plot(return_list(coords), outputs, "Outputs_FFT", do_FFT = True)
+            log_plot(return_list(coords), values, "Values_FFT", do_FFT = True)
 
 
     torch.save(model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
