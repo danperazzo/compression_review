@@ -66,6 +66,9 @@ def main():
                             hidden_omega_0= config.hidden_omega_0, hidden_features=config.hidden_features,
                              hidden_layers=config.hidden_layers, outermost_linear=True)
 
+    #model = network.FourierNet(in_size = 1,  hidden_size=config.hidden_features,out_size = 1,
+    #                            n_layers = 1  )
+
     fn = dataset.sines1
     train_signal_dataset = dataset.Func1DWrapper(range=(-0.5, 0.5),
                                          fn=fn,
@@ -91,7 +94,7 @@ def main():
             optimizer.zero_grad()
 
             # Forward pass to get output/logits
-            outputs, _ = model(coords)
+            outputs  = model(coords)
 
             # Calculate Loss: softmax --> cross entropy loss
             loss = criterion(outputs, values)
@@ -106,7 +109,7 @@ def main():
         if epoch % 10 == 0:
             with torch.no_grad():
                 # Forward pass to get output/logits
-                outputs, _ = model(coords)
+                outputs = model(coords)
 
                 # Calculate Loss: softmax --> cross entropy loss
                 loss = criterion(outputs, values)
@@ -117,9 +120,9 @@ def main():
             print(f'Iteration: Loss: {loss} ')
 
             log_plot(return_list(coords), return_list(outputs),"Outputs_Plot" )
-            log_plot(return_list(coords), return_list(values),"Values_Plot" )
-
             log_plot(return_list(coords), outputs, "Outputs_FFT", do_FFT = True)
+
+            log_plot(return_list(coords), return_list(values),"Values_Plot" )
             log_plot(return_list(coords), values, "Values_FFT", do_FFT = True)
 
 

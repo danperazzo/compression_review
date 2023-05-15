@@ -15,6 +15,86 @@ def cartesian_product(*arrays):
         arr[...,i] = a
     return arr.reshape(-1, la)
 
+
+class MFNBase(nn.Module):
+    """
+    Multiplicative filter network base class.
+
+    Expects the child class to define the 'filters' attribute, which should be 
+    a nn.ModuleList of n_layers+1 filters with output equal to hidden_size.
+    """
+
+    def __init__(
+        self, hidden_size, out_size, n_layers, weight_scale, bias=True, output_act=False
+    ):
+        super().__init__()
+
+        self.linear = nn.ModuleList(
+            [nn.Linear(hidden_size, hidden_size, bias) for _ in range(n_layers)]
+        )
+        self.output_linear = nn.Linear(hidden_size, out_size)
+        self.output_act = output_act
+
+        for lin in self.linear:
+            lin.weight.data.uniform_(
+                -np.sqrt(weight_scale / hidden_size),
+                np.sqrt(weight_scale / hidden_size),
+            )
+
+        return
+
+    def forward(self, x):
+        out = self.filters[0](x)
+        for i in range(1, len(self.filters)):
+            out = self.filters[i](x) * self.linear[i - 1](out)
+        out = self.output_linear(out)
+
+        if self.output_act:
+            out = torch.sin(out)
+
+        return out
+
+
+class FourierLayer(nn.Module):
+    """
+    Sine filter as used in FourierNet.
+    """
+
+    def __init__(self, in_features, out_features, weight_scale):
+        super().__init__()
+        self.linear = nn.Linear(in_features, out_features)
+        self.linear.weight.data *= weight_scale  # gamma
+        self.linear.bias.data.uniform_(-np.pi, np.pi)
+        return
+
+    def forward(self, x):
+        return torch.sin(self.linear(x))
+
+
+class FourierNet(MFNBase):
+    def __init__(
+        self,
+        in_size,
+        hidden_size,
+        out_size,
+        n_layers=3,
+        input_scale=256.0,
+        weight_scale=1.0,
+        bias=True,
+        output_act=False,
+    ):
+        super().__init__(
+            hidden_size, out_size, n_layers, weight_scale, bias, output_act
+        )
+        self.filters = nn.ModuleList(
+            [
+                FourierLayer(in_size, hidden_size, input_scale / np.sqrt(n_layers + 1))
+                for _ in range(n_layers + 1)
+            ]
+        )
+
+
+
 class SineLayer(nn.Module):
     # See paper sec. 3.2, final paragraph, and supplement Sec. 1.5 for discussion of omega_0.
 
@@ -83,6 +163,7 @@ class SineLayer(nn.Module):
         return torch.sin(intermediate), intermediate
 
 
+        
 
 class Siren(nn.Module):
     """
@@ -125,7 +206,7 @@ class Siren(nn.Module):
     def forward(self, coords):
         coords = coords.clone().detach().requires_grad_(True) # allows to take derivative w.r.t. input
         output = self.net(coords)
-        return output, coords
+        return output
 
     def forward_with_activations(self, coords, retain_grad=False):
         '''Returns not only model output, but also intermediate activations.
