@@ -3,16 +3,6 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import cv2
 
-
-def svd_compression(img_c,ratio):
-		[U,S,V] = np.linalg.svd(img_c, full_matrices=False, compute_uv=True, hermitian=False)
-		rank = round(S.shape[0]*ratio)
-		S_compressed = S[:rank]
-		U_compressed = U[:,:rank]
-		V_compressed = V[:rank,:]
-		img_compressed = np.dot(U_compressed * S_compressed, V_compressed)
-		return np.round(img_compressed)
-
 def im2col(image,block): # to divide the image into blocks
 		image_block = []
 		block_height = block[1]
@@ -34,15 +24,10 @@ def col2im(mtx, image_size, block): # to combine the blocks back into image
 				 for i in range(0,sy,p):
 						 result[i:i+q, j:j+p] = mtx[col].reshape((block))
 						 col += 1
-		return result 
+		return result
 
+def kl_compressor(image_blocks, image,block, block_size, order):
 
-def kl_compressor(image, order = 10, block = (8,8)):
-
-	image = image.astype(np.double)
-	
-	block_size = block[0] * block[1]
-	image_blocks = im2col(image,block)
 	mean = np.mean(image_blocks,0) # calculate the mean of the block
 
 	image_centered = np.transpose(image_blocks) - mean.reshape((block_size,1)) # make it zero mean
@@ -62,8 +47,53 @@ def kl_compressor(image, order = 10, block = (8,8)):
 
 	return image_comp
 
-ratio = 0.1
-order = 1
+def svd_compression_block(image,order):
+	[U,S,V] = np.linalg.svd(image, full_matrices=False, compute_uv=True, hermitian=False)
+	S_compressed = S[:order]
+	U_compressed = U[:,:order]
+	V_compressed = V[:order,:]
+	img_compressed = np.dot(U_compressed * S_compressed, V_compressed)
+	return np.round(img_compressed)
+
+
+def svd_compression(image_blocks, image,block, block_size,order):
+
+	image_blocks_compressed = []
+	for image_col in image_blocks:
+		
+		image_block = np.reshape(image_col,block)
+		svd_compression_image = svd_compression_block(image_block,order)
+		svd_compression_col = np.reshape(svd_compression_image,block[0]*block[1])
+		image_blocks_compressed.append(svd_compression_col)
+
+	
+	image_compressed = np.stack(image_blocks_compressed)
+
+	return image_compressed
+
+def block_compressor(image, order = 5, block = (8,8), compression = 'svd'):
+
+
+	if compression == 'kl':
+		image = image.astype(np.double)
+		
+		block_size = block[0] * block[1]
+		image_blocks = im2col(image,block)
+
+		image_comp = kl_compressor(image_blocks,image, block,block_size, order)
+
+	elif compression == 'svd':
+		image = image.astype(np.double)
+
+		block_size = block[0] * block[1]
+		image_blocks = im2col(image,block)
+
+		image_col = svd_compression(image_blocks,image, block,block_size,order)
+		image_comp = col2im(image_col, (image.shape[0],image.shape[1]), block)
+
+	return image_comp
+
+order = 2
 
 img_rgb = np.array(Image.open('datasets/kodak/kodim01.png'))
 
@@ -75,7 +105,7 @@ plt.show()
 img_c_stack = []
 for i in range(3):
 		img_c = img_rgb[:,:,i] 
-		img_c_compressed = kl_compressor(img_c,order, )
+		img_c_compressed = block_compressor(img_c,order,block = (8,8), compression = 'kl')
 		img_c_stack.append(img_c_compressed)
 
 
