@@ -3,6 +3,24 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import cv2
 from numpy.fft import fft2, ifft2, fftshift, ifftshift
+from scipy import fftpack
+
+
+def dct2(f):
+    """
+    Discrete Cosine Transform in 2D.
+    """
+    return np.transpose(fftpack.dct(
+           np.transpose(fftpack.dct(f, norm = "ortho")), norm = "ortho"))
+
+def idct2(f):
+    """
+    Inverse Discrete Cosine Transform in 2D.
+    """
+    return np.transpose(fftpack.idct(
+           np.transpose(fftpack.idct(f, norm = "ortho")), norm = "ortho"))
+
+
 
 
 def im2col(image,block): # to divide the image into blocks
@@ -72,6 +90,21 @@ def fourrier_compression_block(image, order):
 
 	return image_compressed
 
+def dct_compression_block(image, order):
+	perc = order/image.shape[0]
+	
+	Bt = dct2(image)
+	Btsort = np.sort(np.abs(Bt.reshape(-1)))
+
+	thresh_ind = int((1-perc)*len(Btsort))
+	thresh = Btsort[thresh_ind]
+	ind = np.abs(Bt) > thresh
+	Atlow =  Bt * ind
+	
+	image_compressed = idct2(Atlow)
+
+	return image_compressed
+
 def svd_compression(image_blocks, image,block, block_size,order):
 
 	image_blocks_compressed = []
@@ -93,6 +126,20 @@ def fourrier_compression(image_blocks, image,block, block_size,order):
 		
 		image_block = np.reshape(image_col,block)
 		compression_image = fourrier_compression_block(image_block,order)
+		compression_col = np.reshape(compression_image,block[0]*block[1])
+		image_blocks_compressed.append(compression_col)
+
+	
+	image_compressed = np.stack(image_blocks_compressed)
+
+	return image_compressed
+
+def dct_compression(image_blocks, image,block, block_size,order):
+	image_blocks_compressed = []
+	for image_col in image_blocks:
+		
+		image_block = np.reshape(image_col,block)
+		compression_image = dct_compression_block(image_block,order)
 		compression_col = np.reshape(compression_image,block[0]*block[1])
 		image_blocks_compressed.append(compression_col)
 
@@ -130,10 +177,19 @@ def block_compressor(image, order = 5, block = (16,16), compression = 'kl'):
 		image_col = fourrier_compression(image_blocks,image, block,block_size,order)
 		image_comp = col2im(image_col, (image.shape[0],image.shape[1]), block)
 
+	elif compression == 'dct':
+		image = image.astype(np.double)
+
+		block_size = block[0] * block[1]
+		image_blocks = im2col(image,block)
+
+		image_col = dct_compression(image_blocks,image, block,block_size,order)
+		image_comp = col2im(image_col, (image.shape[0],image.shape[1]), block)
+
 
 	return image_comp
 
-order = 8
+order = 2
 
 img_rgb = np.array(Image.open('datasets/kodak/kodim01.png'))
 
@@ -145,7 +201,7 @@ plt.show()
 img_c_stack = []
 for i in range(3):
 		img_c = img_rgb[:,:,i] 
-		img_c_compressed = block_compressor(img_c,order,block = (128,128), compression = 'fourrier')
+		img_c_compressed = block_compressor(img_c,order,block = (128,128), compression = 'dct')
 		img_c_stack.append(img_c_compressed)
 
 
