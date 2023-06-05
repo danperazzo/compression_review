@@ -138,7 +138,7 @@ def dct_compression(image_blocks, image,block, block_size,order):
 
 	return image_compressed
 
-def block_compressor(image, order = 5, block = (8,8), compression = 'kl'):
+def block_compressor(image, order = 5, block = (8,8), compression):
 
 
 	if compression == 'kl':
@@ -180,12 +180,12 @@ def block_compressor(image, order = 5, block = (8,8), compression = 'kl'):
 	return image_comp
 
 
-def compress_rgb(img_rgb, order = 5, block = (16,16), compression = 'kl'):
+def compress_rgb(img_rgb, order = 5, block = (8,8), compression = 'fourrier'):
 
     img_c_stack = []
     for i in range(3):
             img_c = img_rgb[:,:,i] 
-            img_c_compressed = block_compressor(img_c,order,block = (8,8), compression = 'fourrier')
+            img_c_compressed = block_compressor(img_c,order,block = (8,8), compression = compression)
             img_c_stack.append(img_c_compressed)
 
     img_rgb = np.dstack(img_c_stack)
