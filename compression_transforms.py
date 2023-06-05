@@ -32,7 +32,7 @@ def im2col(image,block): # to divide the image into blocks
 		block_size = block_height * block_width
 		for j in range(0, image.shape[1], block_height):
 				for i in range(0, image.shape[0], block_width):
-						image_block.append(np.reshape(image[i:i+block_width, j:j+block_height], block_size))
+						image_block.append(image[i:i+block_width, j:j+block_height])
 		image_block = np.asarray(image_block).astype(float)
 		return image_block
 
@@ -44,7 +44,7 @@ def col2im(mtx, image_size, block): # to combine the blocks back into image
 		col = 0
 		for j in range(0,sx,q):
 				 for i in range(0,sy,p):
-						 result[i:i+q, j:j+p] = mtx[col].reshape((block))
+						 result[i:i+q, j:j+p] = mtx[col]
 						 col += 1
 		return result
 
@@ -96,16 +96,11 @@ def dct_compression_block(image, order):
 	return image_compressed
 
 def svd_compression(image_blocks, image,block, block_size,order):
-
 	image_blocks_compressed = []
-	for image_col in image_blocks:
-		
-		image_block = np.reshape(image_col,block)
-		svd_compression_image = svd_compression_block(image_block,order)
-		svd_compression_col = np.reshape(svd_compression_image,block[0]*block[1])
-		image_blocks_compressed.append(svd_compression_col)
+	for image_col in image_blocks:		
+		svd_compression_image = svd_compression_block(image_col,order)
+		image_blocks_compressed.append(svd_compression_image)
 
-	
 	image_compressed = np.stack(image_blocks_compressed)
 
 	return image_compressed
@@ -114,10 +109,8 @@ def fourrier_compression(image_blocks, image,block, block_size,order):
 	image_blocks_compressed = []
 	for image_col in image_blocks:
 		
-		image_block = np.reshape(image_col,block)
-		compression_image = fourrier_compression_block(image_block,order)
-		compression_col = np.reshape(compression_image,block[0]*block[1])
-		image_blocks_compressed.append(compression_col)
+		compression_image = fourrier_compression_block(image_col,order)
+		image_blocks_compressed.append(compression_image)
 
 	
 	image_compressed = np.stack(image_blocks_compressed)
@@ -128,12 +121,9 @@ def dct_compression(image_blocks, image,block, block_size,order):
 	image_blocks_compressed = []
 	for image_col in image_blocks:
 		
-		image_block = np.reshape(image_col,block)
-		compression_image = dct_compression_block(image_block,order)
-		compression_col = np.reshape(compression_image,block[0]*block[1])
-		image_blocks_compressed.append(compression_col)
+		compression_image = dct_compression_block(image_col,order)
+		image_blocks_compressed.append(compression_image)
 
-	
 	image_compressed = np.stack(image_blocks_compressed)
 
 	return image_compressed
