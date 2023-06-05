@@ -5,6 +5,8 @@ import cv2
 from numpy.fft import fft2, ifft2, fftshift, ifftshift
 from scipy import fftpack
 
+all_methods = ['fourrier', 'dct', 'svd', 'kl']
+
 
 def dct2(f):
     """
@@ -181,3 +183,17 @@ def block_compressor(image, order = 5, block = (16,16), compression = 'kl'):
 
 
 	return image_comp
+
+
+def compress_rgb(img_rgb, order = 5, block = (16,16), compression = 'kl'):
+
+    img_c_stack = []
+    for i in range(3):
+            img_c = img_rgb[:,:,i] 
+            img_c_compressed = block_compressor(img_c,order,block = (8,8), compression = 'fourrier')
+            img_c_stack.append(img_c_compressed)
+
+    img_rgb = np.dstack(img_c_stack)
+    img_rgb = np.around(img_rgb).astype(int)
+
+    return img_rgb

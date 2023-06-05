@@ -1,31 +1,25 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from PIL import Image
-import cv2
-from compression_transforms import block_compressor
+import os
 
+from compression_transforms import compress_rgb, all_methods
+from utils import imwrite, imread, prepare_results_folder
 
-order = 10
+order = 1
+method = 'kl'
+block_shape = (8,8)
+data_folder = 'datasets/kodak/'
 
-img_rgb = np.array(Image.open('datasets/kodak/kodim01.png'))
+results_folder = prepare_results_folder(order, block_shape, all_methods)
 
-plt.imshow(img_rgb.astype(int))
-plt.show()
- 
-#convert the image into grayscale
+img_list = os.listdir( data_folder )
 
-img_c_stack = []
-for i in range(3):
-		img_c = img_rgb[:,:,i] 
-		img_c_compressed = block_compressor(img_c,order,block = (8,8), compression = 'fourrier')
-		img_c_stack.append(img_c_compressed)
+for imname in img_list:
 
+	img_rgb = imread(data_folder, imname) 
+	img_rgb_compress = compress_rgb(img_rgb, order,block_shape, compression = method)
+	imwrite(results_folder , method ,imname,img_rgb_compress)
 
-img_rgb = np.dstack(img_c_stack)
-img_rgb = np.around(img_rgb).astype(int)
+	print(imname)
 
-plt.imshow(img_rgb)
-plt.show()
 
 print(img_rgb.shape)
 
