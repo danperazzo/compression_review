@@ -4,11 +4,13 @@ from compression_transforms import compress_rgb, all_methods
 from utils import imwrite, imread, prepare_results_folder, PSNR, ssim, lpips, average_l
 import pandas as pd
 import time
+from tqdm import tqdm
 
 
-orders = [0.20,0.30,0.40,0.50]
+
+orders = [0.30,0.40,0.50]
 methods = ['kl', 'fourrier', 'dct','svd']
-block_shapes = [(8,8), (16,16), (32,32), (64,64), (128,128)]
+block_shapes = [(8,8), (16,16)]
 data_folder = 'datasets/kodak/'
 
 
@@ -22,7 +24,7 @@ def test_for_parameters(order, method, block_shape, data_folder):
 	lpips_list = []
 	time_elapsed = []
 
-	for imname in img_list:
+	for imname in tqdm(img_list):
 
 		img_rgb = imread(data_folder, imname)
 		start = time.time()
@@ -41,7 +43,6 @@ def test_for_parameters(order, method, block_shape, data_folder):
 		lpips_list.append(lpips_val)
 		time_elapsed.append(time_val)
 
-		print(imname)
 
 	ssim_avg = average_l(ssim_list)
 	psnr_avg = average_l(psnr_list)
@@ -62,5 +63,6 @@ for block_shape in block_shapes:
 	for order in orders:
 		order = int(order*block_shape[0])
 		for method in methods:
+			print(f'Order: {order}, method: {method}, block_shape: {block_shape}')
 			test_for_parameters(order, method, block_shape, data_folder)
 
