@@ -63,7 +63,7 @@ def kl_compressor(image_blocks, image,block, block_size, order):
 	y = np.matmul(np.transpose(eig_vec_sorted),image_centered)
 
 	y[order:block_size,:] = np.zeros((block_size - order,y.shape[1])); # make the last block_size-n eigen vectors zero.
-	z2 = np.matmul(np.linalg.inv(np.transpose(eig_vec_sorted)),y); # For restoring the image from 
+	z2 = np.linalg.solve(np.transpose(eig_vec_sorted),y)
 	x2 = z2 + mean.reshape((block_size,1)); # Add the mean for plotting
 
 	image_comp = col2im(np.transpose(x2), (image.shape[0],image.shape[1]), block) # compressed image
@@ -138,7 +138,7 @@ def dct_compression(image_blocks, image,block, block_size,order):
 
 	return image_compressed
 
-def block_compressor(image, order = 5, block = (8,8), compression):
+def block_compressor(image, order = 5, block = (8,8), compression='kl'):
 
 
 	if compression == 'kl':

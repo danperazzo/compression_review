@@ -6,7 +6,7 @@ import pandas as pd
 import time
 
 
-orders = [0.10,0.20,0.40,0.50]
+orders = [0.20,0.30,0.40,0.50]
 methods = ['kl', 'fourrier', 'dct','svd']
 block_shapes = [(8,8), (16,16), (32,32), (64,64), (128,128)]
 data_folder = 'datasets/kodak/'
