@@ -7,7 +7,7 @@ import time
 
 
 order = 1
-method = 'fourrier'
+method = 'kl'
 block_shape = (8,8)
 data_folder = 'datasets/kodak/'
 

@@ -79,21 +79,16 @@ def svd_compression_block(image,order):
 	return np.round(img_compressed)
 
 def fourrier_compression_block(image, order):
-	perc = order/image.shape[0]
 	
-	Bt = np.fft.fft2(image)
-	Atlow = Bt.copy()
+	Atlow = np.fft.fft2(image)
 	Atlow[order:,order:] = 0
 	
 	image_compressed = np.fft.ifft2(Atlow).real
 
 	return image_compressed
 
-def dct_compression_block(image, order):
-	perc = order/image.shape[0]
-	
-	Bt = dct2(image)
-	Atlow = Bt.copy()
+def dct_compression_block(image, order):	
+	Atlow = dct2(image)
 	Atlow[order:,order:] = 0
 	
 	image_compressed = idct2(Atlow)
@@ -143,7 +138,7 @@ def dct_compression(image_blocks, image,block, block_size,order):
 
 	return image_compressed
 
-def block_compressor(image, order = 5, block = (16,16), compression = 'kl'):
+def block_compressor(image, order = 5, block = (8,8), compression = 'kl'):
 
 
 	if compression == 'kl':
