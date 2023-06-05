@@ -48,6 +48,7 @@ def col2im(mtx, image_size, block): # to combine the blocks back into image
 
 def kl_compressor(image_blocks, image,block, block_size, order):
 
+	order = order**2
 	mean = np.mean(image_blocks,0) # calculate the mean of the block
 
 	image_centered = np.transpose(image_blocks) - mean.reshape((block_size,1)) # make it zero mean
@@ -79,12 +80,8 @@ def fourrier_compression_block(image, order):
 	perc = order/image.shape[0]
 	
 	Bt = np.fft.fft2(image)
-	Btsort = np.sort(np.abs(Bt.reshape(-1)))
-
-	thresh_ind = int((1-perc)*len(Btsort))
-	thresh = Btsort[thresh_ind]
-	ind = np.abs(Bt) > thresh
-	Atlow =  Bt * ind
+	Atlow = Bt.copy()
+	Atlow[order:,order:] = 0
 	
 	image_compressed = np.fft.ifft2(Atlow).real
 
@@ -94,12 +91,8 @@ def dct_compression_block(image, order):
 	perc = order/image.shape[0]
 	
 	Bt = dct2(image)
-	Btsort = np.sort(np.abs(Bt.reshape(-1)))
-
-	thresh_ind = int((1-perc)*len(Btsort))
-	thresh = Btsort[thresh_ind]
-	ind = np.abs(Bt) > thresh
-	Atlow =  Bt * ind
+	Atlow = Bt.copy()
+	Atlow[order:,order:] = 0
 	
 	image_compressed = idct2(Atlow)
 
@@ -189,7 +182,7 @@ def block_compressor(image, order = 5, block = (16,16), compression = 'kl'):
 
 	return image_comp
 
-order = 2
+order = 10
 
 img_rgb = np.array(Image.open('datasets/kodak/kodim01.png'))
 
@@ -201,7 +194,7 @@ plt.show()
 img_c_stack = []
 for i in range(3):
 		img_c = img_rgb[:,:,i] 
-		img_c_compressed = block_compressor(img_c,order,block = (128,128), compression = 'dct')
+		img_c_compressed = block_compressor(img_c,order,block = (8,8), compression = 'fourrier')
 		img_c_stack.append(img_c_compressed)
 
 
@@ -210,4 +203,6 @@ img_rgb = np.around(img_rgb).astype(int)
 
 plt.imshow(img_rgb)
 plt.show()
+
+print(img_rgb.shape)
 
