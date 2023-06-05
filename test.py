@@ -6,7 +6,7 @@ import pandas as pd
 import time
 
 
-order = 1
+order = 4
 method = 'kl'
 block_shape = (8,8)
 data_folder = 'datasets/kodak/'
