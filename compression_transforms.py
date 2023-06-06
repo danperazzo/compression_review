@@ -56,14 +56,12 @@ def kl_compressor(image_blocks, image,block, block_size, order):
 	image_centered = np.transpose(image_blocks) - mean.reshape((block_size,1)) # make it zero mean
 	covariance = np.cov(image_centered) # find the covariance matrix
 
-	eig_val, eig_vec = np.linalg.eig(np.transpose(covariance)) # Finding eigen vectors of covariance matrix
-	idx = eig_val.argsort()[::-1] # Sort the eigen vector matrix from highest to lowest
-	eig_val_sorted = eig_val[idx]
-	eig_vec_sorted = eig_vec[:,idx]
-	y = np.matmul(np.transpose(eig_vec_sorted),image_centered)
+	_, eig_vec = np.linalg.eigh(covariance) # Finding eigen vectors of covariance matrix
+	eig_vec = eig_vec[:,::-1]
+	y = np.matmul(np.transpose(eig_vec),image_centered)
 
 	y[order:block_size,:] = np.zeros((block_size - order,y.shape[1])); # make the last block_size-n eigen vectors zero.
-	z2 = np.linalg.solve(np.transpose(eig_vec_sorted),y)
+	z2 = eig_vec @ y 
 	x2 = z2 + mean.reshape((block_size,1)); # Add the mean for plotting
 
 	image_comp = col2im(np.transpose(x2), (image.shape[0],image.shape[1]), block) # compressed image

@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 orders = [0.30,0.40,0.50]
 methods = ['kl', 'fourrier', 'dct','svd']
-block_shapes = [(8,8), (16,16)]
+block_shapes = [(8,8), (16,16), (32,32)]
 data_folder = 'datasets/kodak/'
 
 
