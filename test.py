@@ -6,13 +6,10 @@ import pandas as pd
 import time
 from tqdm import tqdm
 
-
-
 orders = [0.30,0.40,0.50]
 methods = [ 'fourrier', 'dct','svd']
 block_shapes = [(8,8), (16,16)]
 data_folder = 'datasets/kodak/'
-
 
 def test_for_parameters(order, method, block_shape, data_folder):
 
@@ -28,7 +25,7 @@ def test_for_parameters(order, method, block_shape, data_folder):
 
 		img_rgb = imread(data_folder, imname)
 		start = time.time()
-		img_rgb_compress = compress_rgb(img_rgb, order,block_shape, compression = method)
+		img_rgb_compress = compress_rgb(img_rgb, order,block_shape, method = method)
 		end = time.time()
 		imwrite(results_folder , method ,imname,img_rgb_compress)
 
@@ -37,18 +34,15 @@ def test_for_parameters(order, method, block_shape, data_folder):
 		lpips_val = lpips(img_rgb, img_rgb_compress)
 		time_val = end - start
 
-
 		ssim_list.append(ssim_val)
 		psnr_list.append(psnr_val)
 		lpips_list.append(lpips_val)
 		time_elapsed.append(time_val)
 
-
 	ssim_avg = average_l(ssim_list)
 	psnr_avg = average_l(psnr_list)
 	lpips_avg = average_l(lpips_list)
 	time_avg = average_l(time_elapsed)
-
 
 	df = pd.DataFrame({'image_name': (img_list+['mean']),
 					'ssim': ssim_list + [ssim_avg],
