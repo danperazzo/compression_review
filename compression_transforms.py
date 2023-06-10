@@ -50,14 +50,22 @@ def col2im(mtx, image_size, block): # to combine the blocks back into image
 
 def kl_compression_block(image,order):
 	size = image.shape[1]
-	mean = np.mean(image,axis=0)
+
+	# Make columns of image 0 mean
+	mean = np.mean(image,axis=0) 
 	image = image - mean
+
+	# Decorrelate columns of image
 	covariance = np.cov(image, rowvar=False)
-	_, eig = np.linalg.eigh(covariance)
+	_, eig = np.linalg.eigh(covariance) # Eigenvectors ordered low-to-high 
 	KL = image @ eig
+
+	# Quantization of the transformed image
 	KL_compressed = KL[:,size-order:size]
-	eig_compressed = eig[:,size-order:size]
-	image_comp = (KL_compressed @ np.transpose(eig_compressed)) + mean
+	eig_compressed = eig[:,size-order:size] 
+
+	#Result image
+	image_comp = (KL_compressed @ np.transpose(eig_compressed)) + mean 
 	return image_comp
 
 def svd_compression_block(image,order):
