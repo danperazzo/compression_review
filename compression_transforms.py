@@ -49,13 +49,15 @@ def col2im(mtx, image_size, block): # to combine the blocks back into image
 		return result
 
 def kl_compression_block(image,order):
+	size = image.shape[1]
 	mean = np.mean(image,axis=0)
 	image = image - mean
 	covariance = np.cov(image, rowvar=False)
 	_, eig = np.linalg.eigh(covariance)
 	KL = image @ eig
-	KL[:,:KL.shape[0]-order] = np.zeros((KL.shape[1],KL.shape[0]-order))
-	image_comp = (KL @ np.transpose(eig)) + mean
+	KL_compressed = KL[:,size-order:size]
+	eig_compressed = eig[:,size-order:size]
+	image_comp = (KL_compressed @ np.transpose(eig_compressed)) + mean
 	return image_comp
 
 def svd_compression_block(image,order):
