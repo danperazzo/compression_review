@@ -44,28 +44,18 @@ def col2im(mtx, image_size, block): # to combine the blocks back into image
 		col = 0
 		for j in range(0,sx,q):
 				 for i in range(0,sy,p):
-						 result[i:i+q, j:j+p] = mtx[col].reshape((block))
-						 col += 1
+						result[i:i+q, j:j+p] = mtx[col].reshape((block))
+						col += 1
 		return result
 
-def kl_compressor(image_blocks, image,block, block_size, order):
-
-	order = order**2
-	mean = np.mean(image_blocks,0) # calculate the mean of the block
-
-	image_centered = np.transpose(image_blocks) - mean.reshape((block_size,1)) # make it zero mean
-	covariance = np.cov(image_centered) # find the covariance matrix
-
-	_, eig_vec = np.linalg.eigh(covariance) # Finding eigen vectors of covariance matrix
-	eig_vec = eig_vec[:,::-1]
-	y = np.matmul(np.transpose(eig_vec),image_centered)
-
-	y[order:block_size,:] = np.zeros((block_size - order,y.shape[1])); # make the last block_size-n eigen vectors zero.
-	z2 = eig_vec @ y 
-	x2 = z2 + mean.reshape((block_size,1)); # Add the mean for plotting
-
-	image_comp = col2im(np.transpose(x2), (image.shape[0],image.shape[1]), block) # compressed image
-
+def kl_compression_block(image,order):
+	mean = np.mean(image,axis=0)
+	image = image - mean
+	covariance = np.cov(image, rowvar=False)
+	_, eig = np.linalg.eigh(covariance)
+	KL = image @ eig
+	KL[:,:KL.shape[0]-order] = np.zeros((KL.shape[1],KL.shape[0]-order))
+	image_comp = (KL @ np.transpose(eig)) + mean
 	return image_comp
 
 def svd_compression_block(image,order):
@@ -91,6 +81,18 @@ def dct_compression_block(image, order):
 	
 	image_compressed = idct2(Atlow)
 
+	return image_compressed
+
+def kl_compressor(image_blocks, image,block, block_size, order):
+	image_blocks_compressed = []
+	for image_col in image_blocks:
+
+		image_block = np.reshape(image_col,block)
+		kl_compression_image = kl_compression_block(image_block,order)
+		kl_compression_col = np.reshape(kl_compression_image,block[0]*block[1])
+		image_blocks_compressed.append(kl_compression_col)
+
+	image_compressed = np.stack(image_blocks_compressed)
 	return image_compressed
 
 def svd_compression(image_blocks, image,block, block_size,order):
@@ -145,7 +147,8 @@ def block_compressor(image, order = 5, block = (8,8), compression='kl'):
 		block_size = block[0] * block[1]
 		image_blocks = im2col(image,block)
 
-		image_comp = kl_compressor(image_blocks,image, block,block_size, order)
+		image_col = kl_compressor(image_blocks,image, block,block_size, order)
+		image_comp = col2im(image_col, (image.shape[0],image.shape[1]), block)
 
 	elif compression == 'svd':
 		image = image.astype(np.double)
