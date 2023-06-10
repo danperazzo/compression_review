@@ -8,9 +8,9 @@ from tqdm import tqdm
 
 
 
-orders = [0.30,0.40,0.50]
-methods = ['kl', 'fourrier', 'dct','svd']
-block_shapes = [(8,8), (16,16), (32,32)]
+orders = [0.20, 0.30,  0.50]
+methods = ['dct','svd', 'fourrier', 'kl']
+block_shapes = [(8,8), (16, 16), (32, 32)]
 data_folder = 'datasets/kodak/'
 
 
@@ -28,7 +28,7 @@ def test_for_parameters(order, method, block_shape, data_folder):
 
 		img_rgb = imread(data_folder, imname)
 		start = time.time()
-		img_rgb_compress = compress_rgb(img_rgb, order,block_shape, compression = method)
+		img_rgb_compress = compress_rgb(img_rgb, order,block_shape, method)
 		end = time.time()
 		imwrite(results_folder , method ,imname,img_rgb_compress)
 
