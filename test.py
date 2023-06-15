@@ -1,6 +1,6 @@
 import os
 
-from compression_transforms import compress_rgb, all_methods
+from compression_transforms import compression_factory
 from utils import imwrite, imread, prepare_results_folder, PSNR, ssim, lpips, average_l
 import pandas as pd
 import time
@@ -9,14 +9,14 @@ from tqdm import tqdm
 
 
 orders = [0.20, 0.30,  0.50]
-methods = ['dct','svd', 'fourrier', 'kl']
-block_shapes = [(8,8), (16, 16), (32, 32)]
+all_methods = ['svd', 'dft', 'pca']
+block_shapes = [8, 32, 64]
 data_folder = 'datasets/kodak/'
 
 
-def test_for_parameters(order, method, block_shape, data_folder):
+def test_for_parameters(compressor, data_folder):
 
-	results_folder = prepare_results_folder(order, block_shape, all_methods)
+	results_folder = prepare_results_folder(compressor.order, compressor.block_size, all_methods)
 
 	img_list = os.listdir( data_folder )
 	ssim_list = []
@@ -28,7 +28,7 @@ def test_for_parameters(order, method, block_shape, data_folder):
 
 		img_rgb = imread(data_folder, imname)
 		start = time.time()
-		img_rgb_compress = compress_rgb(img_rgb, order,block_shape, method)
+		img_rgb_compress = compressor.compress_rgb(img_rgb)
 		end = time.time()
 		imwrite(results_folder , method ,imname,img_rgb_compress)
 
@@ -59,10 +59,11 @@ def test_for_parameters(order, method, block_shape, data_folder):
 	csv_path = results_folder + '/' + method +'/results_num.csv'
 	df.to_csv(csv_path)  
 
-for block_shape in block_shapes:
+for block in block_shapes:
 	for order in orders:
-		order = int(order*block_shape[0])
-		for method in methods:
-			print(f'Order: {order}, method: {method}, block_shape: {block_shape}')
-			test_for_parameters(order, method, block_shape, data_folder)
+		for method in all_methods:
+
+			compressor = compression_factory(method, order, block)
+			print(f'Order: {order}, method: {method}, block: {block}')
+			test_for_parameters(compressor, data_folder)
 

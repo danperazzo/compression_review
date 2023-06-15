@@ -1,5 +1,4 @@
 import cv2
-from PIL import Image
 import numpy as np
 import os
 import scipy
@@ -85,7 +84,7 @@ def imread(data_folder, name):
     return img_rgb
 
 def prepare_results_folder(order, block_shape, all_methods):
-    results_folder = 'results_' + f'order_{order}_'+f'blocks_{block_shape}'
+    results_folder = 'results_' + f'order_{order:.3f}_'+f'blocks_{block_shape}'
     
     if not os.path.exists(results_folder):
         os.mkdir(results_folder)

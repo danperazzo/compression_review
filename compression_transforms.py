@@ -1,141 +1,169 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from PIL import Image
-import cv2
-from numpy.fft import fft2, ifft2, fftshift, ifftshift
 from scipy import fftpack
 
-all_methods = ['fourrier', 'dct', 'svd', 'kl']
+from abc import ABC, abstractmethod
+
+def compression_factory(method_type, order, block_size):
+
+	if method_type == 'dft':
+		return DFTCompression(order, block_size)
+	elif method_type == 'dct':
+		return DCTCompression(order, block_size)
+	elif method_type == 'pca':
+		return PCACompression(order, block_size)
+	else:
+		return SVDCompression(order, block_size)
 
 
-def dct2(f):
-    """
-    Discrete Cosine Transform in 2D.
-    """
-    return np.transpose(fftpack.dct(
-           np.transpose(fftpack.dct(f, norm = "ortho")), norm = "ortho"))
 
-def idct2(f):
-    """
-    Inverse Discrete Cosine Transform in 2D.
-    """
-    return np.transpose(fftpack.idct(
-           np.transpose(fftpack.idct(f, norm = "ortho")), norm = "ortho"))
-
-
-def im2block(image,block): # to divide the image into blocks
+class BaseBlockCompression(ABC):
+	def __init__(self, order, block_size):
+		self.order = order
+		self.block_size = block_size
+	
+	@abstractmethod
+	def compression_block(self,image):
+		pass
+	
+	# Code based on https://github.com/SonuDileep/KL-transform-for-Image-Data-Compression/blob/master/KL_Transform%20for%20data:image%20compression.ipynb
+	def im2block(self, image): # to divide the image into blocks
 		image_block = []
-		block_height = block[1]
-		block_width = block[0]
-		for j in range(0, image.shape[1], block_height):
-				for i in range(0, image.shape[0], block_width):
-						image_block.append(image[i:i+block_width, j:j+block_height])
-		image_block = np.asarray(image_block).astype(float)
-		return image_block
 
-def block2im(mtx, image_size, block): # to combine the blocks back into image
-		p, q = block
+		for j in range(0, image.shape[1], self.block_size):
+				for i in range(0, image.shape[0], self.block_size):
+						image_block.append(image[i:i+self.block_size, j:j+self.block_size])
+		image_block = np.asarray(image_block).astype(float)
+
+		return image_block
+	
+	def block2im(self, mtx, image_size): # to combine the blocks back into image
 		sx = image_size[1]
 		sy = image_size[0]
 		result = np.zeros(image_size)  
 		col = 0
-		for j in range(0,sx,q):
-				 for i in range(0,sy,p):
-						result[i:i+q, j:j+p] = mtx[col]
+		for j in range(0,sx,self.block_size):
+				 for i in range(0,sy,self.block_size):
+						result[i:i+self.block_size, j:j+self.block_size] = mtx[col]
 						col += 1
 		return result
-
-def kl_compression_block(image,order):
-	size = image.shape[1]
-
-	# Make columns of image 0 mean
-	mean = np.mean(image,axis=0) 
-	image = image - mean
-
-	# Decorrelate columns of image
-	covariance = np.cov(image, rowvar=False)
-	_, eig = np.linalg.eigh(covariance) # Eigenvectors ordered low-to-high 
-	KL = image @ eig
-
-	# Quantization of the transformed image
-	KL_compressed = KL[:,size-order:size]
-	eig_compressed = eig[:,size-order:size] 
-
-	#Result image
-	image_comp = (KL_compressed @ np.transpose(eig_compressed)) + mean 
-	return image_comp
-
-def svd_compression_block(image,order):
-	[U,S,V] = np.linalg.svd(image, full_matrices=False, compute_uv=True, hermitian=False)
-	S_compressed = S[:order]
-	U_compressed = U[:,:order]
-	V_compressed = V[:order,:]
-	img_compressed = np.dot(U_compressed * S_compressed, V_compressed)
-	return np.round(img_compressed)
-
-def fourrier_compression_block(image, order):
 	
-	Atlow = np.fft.fft2(image)
-	Atlow[order:,order:] = 0
+	def block_compressor(self,image_block_list):
+		image_blocks_compressed = []
+		for image_block in image_block_list:
+
+			image_compressed = self.compression_block(image_block)
+			image_blocks_compressed.append(image_compressed)
+
+		image_compressed = np.stack(image_blocks_compressed)
+
+		return image_compressed
 	
-	image_compressed = np.fft.ifft2(Atlow).real
-
-	return image_compressed
-
-def dct_compression_block(image, order):	
-	Atlow = dct2(image)
-	Atlow[order:,order:] = 0
-	
-	image_compressed = idct2(Atlow)
-
-	return image_compressed
-
-
-
-def block_compressor(image_block_list, order, method):
-	image_blocks_compressed = []
-	for image_block in image_block_list:
-
-		if method == 'kl':
-			image_compressed = kl_compression_block(image_block, order)
-
-		elif method == 'svd':
-			image_compressed = svd_compression_block(image_block, order)
-
-		elif method == 'fourrier':
-			image_compressed = fourrier_compression_block(image_block,order)
-
-		elif method == 'dct':	
-			image_compressed = dct_compression_block(image_block, order)
+	def compreses_channel(self,image):
+		image = image.astype(np.double)
+		image_blocks = self.im2block(image)
+		image_compressed = self.block_compressor(image_blocks)
 		
-		image_blocks_compressed.append(image_compressed)
 
-	image_compressed = np.stack(image_blocks_compressed)
+		image_comp = self.block2im(image_compressed, (image.shape[0],image.shape[1]))
 
-	return image_compressed
-
-def compreses_channel(image, order, block, method):
-
-
-	image = image.astype(np.double)
-	image_blocks = im2block(image,block)
-	image_compressed = block_compressor(image_blocks, order, method)
+		return image_comp
 	
 
-	image_comp = block2im(image_compressed, (image.shape[0],image.shape[1]), block)
+	def compress_rgb(self, img_rgb):
 
-	return image_comp
+		img_c_stack = []
+		for i in range(3):
+				img_c = img_rgb[:,:,i] 
+				img_c_compressed = self.compreses_channel(img_c)
+				img_c_stack.append(img_c_compressed)
+
+		img_rgb = np.dstack(img_c_stack)
+		img_rgb = np.around(img_rgb).astype(int)
+
+		return img_rgb
+		
+	
+class DFTCompression(BaseBlockCompression):
+
+	def compression_block(self, image):
+		image_dft = np.fft.fft2(image)
+
+		image_filter = np.zeros(image.shape)
+
+		num_freq = int(self.block_size*((self.order)**0.5))
+		image_filter[:num_freq,:num_freq] = image_dft[:num_freq,:num_freq]
+		
+		image_compressed = np.fft.ifft2(image_filter).real
+
+		return image_compressed
+	
+class DCTCompression(BaseBlockCompression):
+
+	# Code for transforms from: http://www.jeanfeydy.com/Teaching/MasterClass_Radiologie/Part%206%20-%20JPEG%20compression.html
+	def dct2(self,f):
+		"""
+		Discrete Cosine Transform in 2D.
+		"""
+		return np.transpose(fftpack.dct(
+			np.transpose(fftpack.dct(f, norm = "ortho")), norm = "ortho"))
+
+	def idct2(self,f):
+		"""
+		Inverse Discrete Cosine Transform in 2D.
+		"""
+		return np.transpose(fftpack.idct(
+			np.transpose(fftpack.idct(f, norm = "ortho")), norm = "ortho"))
+
+	def compression_block(self, image):	
+		image_dct = self.dct2(image)
+
+		image_filter = np.zeros(image_dct.shape)
+		num_freq = int(self.block_size*((self.order)**0.5))
+		image_filter[:num_freq,:num_freq] = image_dct[:num_freq,:num_freq]
+		
+		image_compressed = self.idct2(image_filter)
+
+		return image_compressed
+	
+
+class PCACompression(BaseBlockCompression):
+
+	def compression_block(self, image):
+		size = image.shape[1]
+
+		mean = np.mean(image,axis=0) 
+		image = image - mean
+
+		# Decorrelate columns of image
+		covariance = np.cov(image, rowvar=False)
+		_, eig = np.linalg.eigh(covariance) # Eigenvectors ordered low-to-high 
+		PCA = image @ eig
+
+		# Quantization of the transformed image
+		D = int(self.order*self.block_size)
+		PCA_compressed = PCA[:,size-D:size]
+		eig_compressed = eig[:,size-D:size] 
+
+		image_comp = (PCA_compressed @ np.transpose(eig_compressed)) + mean 
+		return image_comp
 
 
-def compress_rgb(img_rgb, order = 5, block = (8,8), method = 'fourrier'):
+class SVDCompression(BaseBlockCompression):
 
-    img_c_stack = []
-    for i in range(3):
-            img_c = img_rgb[:,:,i] 
-            img_c_compressed = compreses_channel(img_c,order,block = block, method = method)
-            img_c_stack.append(img_c_compressed)
+	def compression_block(self, image):
+		D = int(self.order*self.block_size)
+		[Umat,Smat,Vmat] = np.linalg.svd(image, full_matrices=False, compute_uv=True, hermitian=False)
 
-    img_rgb = np.dstack(img_c_stack)
-    img_rgb = np.around(img_rgb).astype(int)
+		S_compressed = Smat[:D]
+		U_compressed = Umat[:,:D]
+		V_compressed = Vmat[:D,:]
 
-    return img_rgb
+		img_compressed = np.dot(U_compressed * S_compressed, V_compressed)
+		return np.round(img_compressed)	
+
+
+
+
+
+
+
