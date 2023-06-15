@@ -112,7 +112,7 @@ class DFTCompression(BaseBlockCompression):
 
 		num_freq = image_compressed.shape[0]
 
-		image_reconstruction_freq = np.zeros(orig_dim)
+		image_reconstruction_freq = np.zeros(orig_dim, dtype=np.complex_)
 		image_reconstruction_freq[:num_freq,:num_freq] = image_compressed
 		
 		image_compressed = np.fft.ifft2(image_reconstruction_freq).real

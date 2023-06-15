@@ -4,7 +4,7 @@ from evaluation import test_for_parameters, prepare_results_folder
 
 orders = [0.20, 0.30,  0.50]
 all_methods = ['dft', 'dct', 'pca', 'svd']
-block_shapes = [8, 32, 64]
+block_shapes = [32,8,  64]
 data_folder = 'datasets/kodak/'
 
 
