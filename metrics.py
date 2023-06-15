@@ -1,11 +1,6 @@
-import cv2
 import numpy as np
-import os
 import scipy
 import torch
-
-def average_l(lst):
-    return sum(lst) / len(lst)
 
 def rgb_ssim(img0, img1, max_val,
              filter_size=11,
@@ -74,26 +69,4 @@ def rgb_lpips(np_gt, np_im, net_name, device):
 PSNR = lambda x,y : -10. * np.log10(np.mean(np.square(x/255 - y/255)))
 ssim = lambda x,y :rgb_ssim(x/255, y/255, max_val=1)
 lpips = lambda x,y :rgb_lpips(np.float32(x/255), np.float32(y/255), net_name='vgg', device=torch.device("cpu"))
-
-
-def imwrite(results_folder,method, name ,img):
-    cv2.imwrite(results_folder + '/' + method + '/' +name,img)
-
-def imread(data_folder, name):
-    img_rgb = cv2.imread(data_folder + '/' + name)
-    return img_rgb
-
-def prepare_results_folder(order, block_shape, all_methods):
-    results_folder = 'results_' + f'order_{order:.3f}_'+f'blocks_{block_shape}'
-    
-    if not os.path.exists(results_folder):
-        os.mkdir(results_folder)
-
-    for method in all_methods:
-        method_folder = results_folder+'/'+method
-        if not os.path.exists(method_folder):
-            os.mkdir(method_folder)
-
-    return results_folder
-
 
