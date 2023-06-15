@@ -89,10 +89,10 @@ def prepare_results_folder(order, block_shape, all_methods):
     if not os.path.exists(results_folder):
         os.mkdir(results_folder)
 
-        for method in all_methods:
-            method_folder = results_folder+'/'+method
-            if not os.path.exists(method_folder):
-                os.mkdir(method_folder)
+    for method in all_methods:
+        method_folder = results_folder+'/'+method
+        if not os.path.exists(method_folder):
+            os.mkdir(method_folder)
 
     return results_folder
 
