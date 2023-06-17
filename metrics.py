@@ -2,6 +2,8 @@ import numpy as np
 import scipy
 import torch
 
+# CODE FROM: https://github.com/danperazzo/dvgoplusplus
+
 def rgb_ssim(img0, img1, max_val,
              filter_size=11,
              filter_sigma=1.5,

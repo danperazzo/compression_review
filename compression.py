@@ -33,10 +33,10 @@ class BaseBlockCompression(ABC):
 	def im2encoded_blocks(self, image): # to divide the image into blocks
 		image_block_list = []
 		for j in range(0, image.shape[1], self.block_size):
-				for i in range(0, image.shape[0], self.block_size):
-						image_block = image[i:i+self.block_size, j:j+self.block_size]
-						encoded_blocks = self.encode_block(image_block)
-						image_block_list.append(encoded_blocks)
+			for i in range(0, image.shape[0], self.block_size):
+				image_block = image[i:i+self.block_size, j:j+self.block_size]
+				encoded_blocks = self.encode_block(image_block)
+				image_block_list.append(encoded_blocks)
 
 		image_block = image_block_list
 
@@ -48,9 +48,9 @@ class BaseBlockCompression(ABC):
 		result = np.zeros(image_size)  
 		index_block = 0
 		for j in range(0,width,self.block_size):
-				 for i in range(0,height,self.block_size):
-						result[i:i+self.block_size, j:j+self.block_size] = self.decode_block(block_list[index_block])
-						index_block += 1
+			for i in range(0,height,self.block_size):
+				result[i:i+self.block_size, j:j+self.block_size] = self.decode_block(block_list[index_block])
+				index_block += 1
 		return result
 	
 	
@@ -75,9 +75,9 @@ class BaseBlockCompression(ABC):
 
 		img_encoded_rgb_list = []
 		for i in range(3):
-				img_c = img_rgb[:,:,i] 
-				img_c_coded = self.encode_channel(img_c)
-				img_encoded_rgb_list.append(img_c_coded)
+			img_c = img_rgb[:,:,i] 
+			img_c_coded = self.encode_channel(img_c)
+			img_encoded_rgb_list.append(img_c_coded)
 
 		return img_encoded_rgb_list
 	
