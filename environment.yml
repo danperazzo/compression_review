@@ -1,0 +1,16 @@
+name: compression_review
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - numpy=1.24.3
+  - python=3.9
+  - pytorch=1.10.1
+  - pykdtree=1.3.4
+  - pip
+  - pip:
+    - opencv-python
+    - tqdm==4.65
+    - pandas==2.0.2
+    - scipy==1.10.1
+    - lpips
