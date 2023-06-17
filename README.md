@@ -23,3 +23,7 @@ The results will be at '''compression_review/''', with the various types of orde
 
 ## Proccessed results
 Results availabe for download in [https://drive.google.com/drive/folders/1ir8E9nLVfpw4cnEGEvVNodx8v6fKqzbv?usp=sharing](https://drive.google.com/file/d/1u82-O6P85VqVe4NdfSYDRw-JCiSplNMU/view?usp=drive_link)
+
+
+## Technical Report
+Report available at https://drive.google.com/file/d/1dELMVxL67Lv7_UnDIg7P9CtxeWmeGDCW/view?usp=drive_link
